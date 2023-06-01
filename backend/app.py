@@ -3,6 +3,7 @@ import queue
 import uuid
 from datetime import datetime
 import requests
+from distutils.util import strtobool
 
 from flask import Flask, jsonify, render_template, request
 import oai
@@ -11,7 +12,8 @@ recognized_text_queue = queue.Queue()
 speech_recognizer = None
 app = Flask(__name__)
 app_data = {
-    'messages': []
+    'messages': [],
+    'current_topic_messages': []
 }
 @app.route('/')
 def home():
@@ -28,7 +30,14 @@ def send_message():
     if message:
         timestamp = datetime.now()
         app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
-        flag = is_topic_changed(message)
+        
+        if is_topic_changed(app_data['current_topic_messages'], message):
+            summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
+            app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': 'bot', 'userIcon': userIcon, 'bot': True})
+
+            app_data['current_topic_messages'] = []
+
+        app_data['current_topic_messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
         return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
     else:
         return jsonify({'success': False, 'message': 'メッセージが空です。'})
@@ -83,12 +92,12 @@ def get_period_summary():
         return jsonify({'success': False, 'message': '開始時間または終了時間が空です。'})
     
 # 過去の3つのメッセージと最新のメッセージの話題が共通か異なるか判定する
-def is_topic_changed(latest_message: str) -> bool:
-    messages = app_data['messages']
+def is_topic_changed(current_topic_messages, latest_message: str) -> bool:
+    messages = current_topic_messages
     if len(messages) < 4:
         return False
     else:
-        past_messages = "¥n".join([message['message'] for message in messages[-4:-1]])
+        past_messages = "\n".join([message['message'] for message in messages[-4:-1]])
         content = [
         {
             "role": "system",
@@ -96,12 +105,11 @@ def is_topic_changed(latest_message: str) -> bool:
             Are the past messages and latest message in the above conversation on the same topic? Are they different topics?
             If they are the same topic, please return False. If they are different topics, please return True.""",
         },
-        {"role": "user", "content": f"## past messages¥n{past_messages}¥n## latest message¥n{latest_message}"},
+        {"role": "user", "content": f"## past messages\n{past_messages}\n## latest message\n{latest_message}"},
         ]
         openai = oai.Openai()
         flag = openai.chat_completion(content)
-        print(f"past: {past_messages}¥nlatest: {latest_message}¥nflag: {flag}")
-        return flag
+        return strtobool(flag)
     
 def get_summary(text):
     message = [
