@@ -72,8 +72,8 @@
                 const messageElement = `<div class="message">
                                   <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
                                   <div class="message-text">
-                                    <p>${message.text}</p>
-                                    <small>${message.time}</small>
+                                    <p>${message.message}</p>
+                                    <small>${message.timestamp}</small>
                                   </div>
                                 </div>`;
                 messageContainer.innerHTML += messageElement;
@@ -99,8 +99,8 @@
                 const aiMessageElement = `<div class="ai-message">
                                     <img src="${ai_message.userIcon}" alt="${ai_message.userName}" width="40" height="40">
                                     <div class="message-text">
-                                        <p>${ai_message.text}</p>
-                                        <small>${ai_message.time}</small>
+                                        <p>${ai_message.message}</p>
+                                        <small>${ai_message.timestamp}</small>
                                     </div>
                                   </div>`;
                 aiMessageContainer.innerHTML += aiMessageElement;
