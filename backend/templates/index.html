@@ -58,26 +58,43 @@
     <script>
         async function fetchData() {
             try {
-                const response = await axios.get('/api/messages');
-                const messages = response.data;
-                renderMessages(messages);
+                while (true) { // 無限ループでAPIを定期的に呼び出し
+                    const response = await axios.get('/api/messages');
+                    const messages = response.data;
+                    renderMessages(messages);
+
+                    // ここで更新間隔を設定しています (ミリ秒単位)
+                    // 例: 5000ms = 5秒 (5秒おきにAPIを呼び出す)
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
             } catch (error) {
                 console.error('Error fetching messages:', error);
             }
         }
 
+        let lastMessageCount = 0;
+
         function renderMessages(messages) {
             const messageContainer = document.querySelector('.left-side');
-            messages.forEach(message => {
-                const messageElement = `<div class="message">
-                                  <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
-                                  <div class="message-text">
-                                    <p>${message.message}</p>
-                                    <small>${message.timestamp}</small>
-                                  </div>
-                                </div>`;
-                messageContainer.innerHTML += messageElement;
-            });
+
+            // 新しいメッセージが存在する場合のみ更新
+            if (lastMessageCount < messages.length) {
+                messageContainer.innerHTML = ''; // ここでメッセージコンテナをクリア
+
+                messages.forEach(message => {
+                    const messageElement = `<div class="message">
+                                      <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
+                                      <div class="message-text">
+                                        <p>${message.message}</p>
+                                        <small>${message.timestamp}</small>
+                                      </div>
+                                    </div>`;
+                    messageContainer.innerHTML += messageElement;
+                });
+
+                // 最後のメッセージ数を更新
+                lastMessageCount = messages.length;
+            }
         }
 
         fetchData();

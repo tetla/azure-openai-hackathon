@@ -30,6 +30,7 @@ def send_message():
         return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
     else:
         return jsonify({'success': False, 'message': 'メッセージが空です。'})
+    
 @app.route('/api/summarize', methods=['POST'])
 def summarize():
     text = request.form.get('text')
@@ -52,8 +53,8 @@ def api_aimessages():
         {
             "userIcon": "https://api.dicebear.com/6.x/thumbs/svg?seed=Muffin",
             "userName": "Muffin",
-            "text": "This is a test message",
-            "time": "10:32"
+            "message": "This is a test message",
+            "timestamp": "10:32"
         },
     ]
     return jsonify(messages)
@@ -113,4 +114,4 @@ def translate_text(text):
     return response[0].get('translations')[0].get('text')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=False, port=5001)
