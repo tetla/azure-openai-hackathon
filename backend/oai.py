@@ -5,7 +5,10 @@ import logging
 # Import from 3rd party libraries
 import openai
 import sys
+from dotenv import load_dotenv
 # Assign credentials from environment variable or streamlit secrets dict
+
+load_dotenv(verbose=True, dotenv_path='./.env')
 openai.api_type = os.getenv("OPENAI_API_TYPE")
 openai.api_base = os.getenv("OPENAI_API_BASE")
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -15,7 +18,6 @@ openai.api_version = os.getenv("OPENAI_API_VERSION")
 # Does not work hosted on Streamlit since all packages are re-installed by Poetry
 # Alternatively (affects all messages from this logger):
 logging.getLogger("openai").setLevel(logging.WARNING)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
 class Openai:
     """OpenAI Connector."""
     @staticmethod

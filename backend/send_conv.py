@@ -14,7 +14,6 @@ for conv in conversations:
         name, msg = conv.split(':')
         messages.append({"message": msg, "userName": name})
 
-print(messages)
 for msg in messages:
     print(msg)
     response = requests.post(url, data=msg)
