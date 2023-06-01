@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 import oai
 load_dotenv(verbose=True)
-INPUT_DEVICE_ID = "{0.0.1.00000000}.{ebf92b49-bf6f-4522-9bf3-7bf803d7e509}"  # VB-Audio VoiceMeeter VAIO
 recognized_text_queue = queue.Queue()
 speech_recognizer = None
 app = Flask(__name__)
@@ -38,25 +37,44 @@ def summarize():
             return jsonify({'success': False, 'message': '要約に失敗しました。'})
     else:
         return jsonify({'success': False, 'message': 'テキストが空です。'})
-@app.route('/api/get-recognized-text')
-def get_recognized_text():
-    if not recognized_text_queue.empty():
-        recognized_text = recognized_text_queue.get()
-        try:
-            translation = translate_text(recognized_text)
-        except Exception:
-            translation = "翻訳に失敗しました"
-        timestamp = datetime.now()
-        app_data['messages'].append({'timestamp': timestamp, 'content': recognized_text, 'translation': translation})
-        return jsonify({'success': True, 'message': recognized_text, 'translation': translation})
-    else:
-        return jsonify({'success': False, 'message': '認識されたテキストがありません。', 'translation': '認識されたテキストがありません。'})
+
+@app.route('/api/messages', methods=['GET'])
+def api_messages():
+    messages = [
+        {
+            "userIcon": "https://api.dicebear.com/6.x/thumbs/svg?seed=Molly",
+            "userName": "Molly",
+            "text": "This is a test message 1",
+            "time": "10:32"
+        },
+        {
+            "userIcon": "https://api.dicebear.com/6.x/thumbs/svg?seed=Gizmo",
+            "userName": "Gizmo",
+            "text": "This is a test message 2",
+            "time": "10:35"
+        },
+    ]
+    return jsonify(messages)
+
+@app.route('/api/ai-messages', methods=['GET'])
+# def api_aimessages():
+    messages = [
+        {
+            "userIcon": "https://api.dicebear.com/6.x/thumbs/svg?seed=Muffin",
+            "userName": "Muffin",
+            "text": "This is a test message",
+            "time": "10:32"
+        },
+    ]
+    return jsonify(messages)
+    
 def summarize_period(start_time, end_time):
     start_time = datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
     end_time = datetime.strptime(end_time, '%Y/%m/%d %H:%M:%S')
     period_messages = [message for message in app_data['messages'] if start_time <= message['timestamp'] <= end_time]
     text = " ".join([message['content'] for message in period_messages])
     return get_summary(text)
+
 @app.route('/api/get-period-summary', methods=['POST'])
 def get_period_summary():
     start_time = request.form.get('start_time')
@@ -70,6 +88,7 @@ def get_period_summary():
             return jsonify({'success': False, 'message': '要約に失敗しました。', 'translation': '要約に失敗しました。'})
     else:
         return jsonify({'success': False, 'message': '開始時間または終了時間が空です。'})
+    
 def get_summary(text):
     message = [
         {
@@ -82,6 +101,7 @@ def get_summary(text):
     openai = oai.Openai()
     summary = openai.chat_completion(message)
     return summary
+
 def translate_text(text):
     translator_url = "https://api.cognitive.microsofttranslator.com/translate"
     params = {

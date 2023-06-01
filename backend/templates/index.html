@@ -1,142 +1,114 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>会議支援</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>議事録アプリ</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
-        .scrollable-table {
-            max-height: 400px;
-            overflow-y: auto;
-            display: block;
-        }
-        table {
+        body {
+            display: flex;
+            height: 100vh;
             width: 100%;
-            border-collapse: collapse;
         }
-        thead {
-            background-color: #F2F2F2;
+
+        .left-side,
+        .right-side {
+            width: 50%;
+            height: 100%;
+            overflow-y: scroll;
+            padding: 20px;
         }
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
+
+        .message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .message-text {
+            margin-left: 10px;
+        }
+
+        .ai-message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            position: absolute;
+            left: 50%;
+            top: calc(50% - 20px);
+            /* ここで表示位置を調整 */
         }
     </style>
 </head>
+
 <body>
-    <h1>会議支援アプリケーション</h1>
-    <button id="start-recognition-button">音声認識を開始</button>
-    <button id="stop-recognition-button">音声認識を停止</button>
-    <h2>メッセージ一覧</h2>
-    <div class="scrollable-table">
-        <table id="message-table">
-            <thead>
-                <tr>
-                    <th>時間</th>
-                    <th>原文</th>
-                    <th>日本語訳</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+    <div class="left-side">
+        <!-- 会議の発言箇所。JavaScriptでDynamically更新 -->
     </div>
-    <h2>要約されたメッセージ</h2>
-    <div class="scrollable-table">
-        <table id="summary-table">
-            <thead>
-                <tr>
-                    <th>要約した期間</th>
-                    <th>要約</th>
-                    <th>日本語訳</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+    <div class="right-side">
+        <!-- AIの発言箇所。JavaScriptでDynamically更新 -->
     </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
     <script>
-        var intervalId = null;
-        var summaryCounter = 0;
-        function toJapanTime(date) {
-            return new Intl.DateTimeFormat('ja-JP', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Tokyo'
-            }).format(date);
+        async function fetchData() {
+            try {
+                const response = await axios.get('/api/messages');
+                const messages = response.data;
+                renderMessages(messages);
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+            }
         }
-        function updateRecognizedText() {
-            $.get('/api/get-recognized-text')
-                .done(function (data) {
-                    if (data.success) {
-                        var now = new Date();
-                        var timestamp = toJapanTime(now);
-                        var newRow = `<tr>
-                                    <td>${timestamp}</td>
-                                    <td>${data.message}</td>
-                                    <td>${data.translation}</td>
-                                  </tr>`;
-                        $('#message-table tbody').append(newRow);
-                    }
-                });
+
+        function renderMessages(messages) {
+            const messageContainer = document.querySelector('.left-side');
+            messages.forEach(message => {
+                const messageElement = `<div class="message">
+                                  <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
+                                  <div class="message-text">
+                                    <p>${message.text}</p>
+                                    <small>${message.time}</small>
+                                  </div>
+                                </div>`;
+                messageContainer.innerHTML += messageElement;
+            });
         }
-        $('#start-recognition-button').on('click', function () {
-            $.post('/api/start-recognition')
-                .done(function (data) {
-                    alert(data.message);
-                    if (data.success && intervalId === null) {
-                        intervalId = setInterval(function () {
-                            // 音声認識テキストを取得・更新する処理
-                            updateRecognizedText();
-                            // 5分ごとに要約を取得する処理
-                            summaryCounter++;
-                            if (summaryCounter >= 36) { // 5 * 60 * 1000 (5分) / 5000 (5秒) = 60
-                                summaryCounter = 0;
-                                var now = new Date();
-                                var start_time = new Date(now.getTime() - 3 * 60 * 1000); // 5分前
-                                var end_time = now;
-                                start_time = toJapanTime(start_time);
-                                end_time = toJapanTime(end_time);
-                                $.post('/api/get-period-summary', {
-                                    start_time: start_time,
-                                    end_time: end_time
-                                })
-                                    .done(function (data) {
-                                        if (data.success) {
-                                            var newRow = `<tr>
-                                            <td>${start_time}</td>
-                                            <td>${data.summary}</td>
-                                            <td>${data.translation}</td>
-                                            </tr>`;
-                                            $('#summary-table tbody').append(newRow);
-                                        } else {
-                                            console.error(data.message);
-                                        }
-                                    })
-                                    .fail(function () {
-                                        console.error('要約リクエストに失敗しました。');
-                                    });
-                            }
-                        }, 5000);
-                    }
-                });
-        });
-        $('#stop-recognition-button').on('click', function () {
-            $.post('/api/stop-recognition')
-                .done(function (data) {
-                    alert(data.message);
-                    if (data.success && intervalId !== null) {
-                        clearInterval(intervalId);
-                        intervalId = null;
-                    }
-                });
-        });
+
+        fetchData();
+
+        async function fetchAIMessages() {
+            try {
+                const response = await axios.get('/api/ai-messages');
+                const ai_messages = response.data;
+                renderAIMessages(ai_messages);
+            } catch (error) {
+                console.error('Error fetching AI messages:', error);
+            }
+        }
+
+        function renderAIMessages(ai_messages) {
+            const aiMessageContainer = document.querySelector('.left-side');
+
+            ai_messages.forEach(ai_message => {
+                const aiMessageElement = `<div class="ai-message">
+                                    <img src="${ai_message.userIcon}" alt="${ai_message.userName}" width="40" height="40">
+                                    <div class="message-text">
+                                        <p>${ai_message.text}</p>
+                                        <small>${ai_message.time}</small>
+                                    </div>
+                                  </div>`;
+                aiMessageContainer.innerHTML += aiMessageElement;
+            });
+        }
+
+        fetchAIMessages();
     </script>
 </body>
+
 </html>
