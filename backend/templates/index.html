@@ -75,56 +75,33 @@
         let lastMessageCount = 0;
 
         function renderMessages(messages) {
-            const messageContainer = document.querySelector('.left-side');
+            const leftMessageContainer = document.querySelector('.left-side');
+            const rightMessageContainer = document.querySelector('.right-side');
 
-            // 新しいメッセージが存在する場合のみ更新
-            if (lastMessageCount < messages.length) {
-                messageContainer.innerHTML = ''; // ここでメッセージコンテナをクリア
+            // 左側および右側のメッセージコンテナをクリア
+            leftMessageContainer.innerHTML = '';
+            rightMessageContainer.innerHTML = '';
 
-                messages.forEach(message => {
-                    const messageElement = `<div class="message">
-                                      <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
-                                      <div class="message-text">
-                                        <p>${message.message}</p>
-                                        <small>${message.timestamp}</small>
-                                      </div>
-                                    </div>`;
-                    messageContainer.innerHTML += messageElement;
-                });
+            messages.forEach(message => {
+                const messageElement = `<div class="message">
+                                  <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
+                                  <div class="message-text">
+                                    <p>${message.message}</p>
+                                    <small>${message.timestamp}</small>
+                                  </div>
+                                </div>`;
 
-                // 最後のメッセージ数を更新
-                lastMessageCount = messages.length;
-            }
+                // メッセージがボットからのものであれば右側のコンテナに、そうでなければ左側のコンテナに追加
+                if (message.bot) {
+                    rightMessageContainer.innerHTML += messageElement;
+                } else {
+                    leftMessageContainer.innerHTML += messageElement;
+                }
+            });
         }
 
         fetchData();
 
-        async function fetchAIMessages() {
-            try {
-                const response = await axios.get('/api/ai-messages');
-                const ai_messages = response.data;
-                renderAIMessages(ai_messages);
-            } catch (error) {
-                console.error('Error fetching AI messages:', error);
-            }
-        }
-
-        function renderAIMessages(ai_messages) {
-            const aiMessageContainer = document.querySelector('.left-side');
-
-            ai_messages.forEach(ai_message => {
-                const aiMessageElement = `<div class="ai-message">
-                                    <img src="${ai_message.userIcon}" alt="${ai_message.userName}" width="40" height="40">
-                                    <div class="message-text">
-                                        <p>${ai_message.message}</p>
-                                        <small>${ai_message.timestamp}</small>
-                                    </div>
-                                  </div>`;
-                aiMessageContainer.innerHTML += aiMessageElement;
-            });
-        }
-
-        fetchAIMessages();
     </script>
 </body>
 

@@ -1,11 +1,12 @@
 import requests
 
-url = 'http://127.0.0.1:5001/api/send-message'
+url = 'http://127.0.0.1:15000/api/send-message'
 
 # いくつかのメッセージを送信
 messages = [
     {"message": "こんにちは、みなさん！", "userName": "Alice"},
     {"message": "今日はいい天気ですね！", "userName": "Bob"},
+    {"message": "これはbotのメッセージです", "userName": "Bot", "bot": True},
     {"message": "新しいプロジェクトに取り組んでいます。", "userName": "Carol"}
 ]
 

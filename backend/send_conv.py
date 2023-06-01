@@ -1,4 +1,5 @@
 import requests
+import time
 
 url = 'http://127.0.0.1:15000/api/send-message'
 # いくつかのメッセージを送信
@@ -22,3 +23,4 @@ for msg in messages:
         print("メッセージが追加されました。")
     else:
         print("メッセージ追加に失敗しました。")
+    time.sleep(5)

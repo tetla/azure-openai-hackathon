@@ -23,10 +23,11 @@ def send_message():
     userName = request.form.get('userName')
     # requestにuserIconが含まれていればその値を設定し、なければhttps://api.dicebear.com/6.x/thumbs/svg?seed=Muffinを設定する
     userIcon = request.form.get('userIcon') or 'https://api.dicebear.com/6.x/thumbs/svg?seed=Muffin'
-
+    bot = request.form.get('bot') or False
+    is_topic_changed(message)
     if message:
         timestamp = datetime.now()
-        app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon})
+        app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
         return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
     else:
         return jsonify({'success': False, 'message': 'メッセージが空です。'})
@@ -79,6 +80,28 @@ def get_period_summary():
             return jsonify({'success': False, 'message': '要約に失敗しました。', 'translation': '要約に失敗しました。'})
     else:
         return jsonify({'success': False, 'message': '開始時間または終了時間が空です。'})
+    
+# 過去の3つのメッセージと最新のメッセージの話題が共通か異なるか判定する
+def is_topic_changed(latest_message):
+    messages = app_data['messages']
+    if len(messages) < 4:
+        return False
+    else:
+        past_messages = "¥n".join([message['message'] for message in messages[-4:-1]])
+        print(past_messages)
+        content = [
+        {
+            "role": "system",
+            "content": """You are an AI assistant.
+            Are the past messages and latest message in the above conversation on the same topic? Are they different topics?
+            If they are the same topic, please return False. If they are different topics, please return True.""",
+        },
+        {"role": "user", "content": f"## past messages¥n{past_messages}¥n## latest message¥n{latest_message}"},
+        ]
+        openai = oai.Openai()
+        flag = openai.chat_completion(content)
+        print(flag)
+        return flag
     
 def get_summary(text):
     message = [
