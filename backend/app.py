@@ -114,4 +114,4 @@ def translate_text(text):
     return response[0].get('translations')[0].get('text')
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=False, port=5001)
+    app.run(host="0.0.0.0", debug=False, port=15000)
