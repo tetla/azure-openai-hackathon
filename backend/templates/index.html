@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>会議支援</title>
+    <style>
+        .scrollable-table {
+            max-height: 400px;
+            overflow-y: auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background-color: #F2F2F2;
+        }
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>会議支援アプリケーション</h1>
+    <button id="start-recognition-button">音声認識を開始</button>
+    <button id="stop-recognition-button">音声認識を停止</button>
+    <h2>メッセージ一覧</h2>
+    <div class="scrollable-table">
+        <table id="message-table">
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>原文</th>
+                    <th>日本語訳</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <h2>要約されたメッセージ</h2>
+    <div class="scrollable-table">
+        <table id="summary-table">
+            <thead>
+                <tr>
+                    <th>要約した期間</th>
+                    <th>要約</th>
+                    <th>日本語訳</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var intervalId = null;
+        var summaryCounter = 0;
+        function toJapanTime(date) {
+            return new Intl.DateTimeFormat('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Tokyo'
+            }).format(date);
+        }
+        function updateRecognizedText() {
+            $.get('/api/get-recognized-text')
+                .done(function (data) {
+                    if (data.success) {
+                        var now = new Date();
+                        var timestamp = toJapanTime(now);
+                        var newRow = `<tr>
+                                    <td>${timestamp}</td>
+                                    <td>${data.message}</td>
+                                    <td>${data.translation}</td>
+                                  </tr>`;
+                        $('#message-table tbody').append(newRow);
+                    }
+                });
+        }
+        $('#start-recognition-button').on('click', function () {
+            $.post('/api/start-recognition')
+                .done(function (data) {
+                    alert(data.message);
+                    if (data.success && intervalId === null) {
+                        intervalId = setInterval(function () {
+                            // 音声認識テキストを取得・更新する処理
+                            updateRecognizedText();
+                            // 5分ごとに要約を取得する処理
+                            summaryCounter++;
+                            if (summaryCounter >= 36) { // 5 * 60 * 1000 (5分) / 5000 (5秒) = 60
+                                summaryCounter = 0;
+                                var now = new Date();
+                                var start_time = new Date(now.getTime() - 3 * 60 * 1000); // 5分前
+                                var end_time = now;
+                                start_time = toJapanTime(start_time);
+                                end_time = toJapanTime(end_time);
+                                $.post('/api/get-period-summary', {
+                                    start_time: start_time,
+                                    end_time: end_time
+                                })
+                                    .done(function (data) {
+                                        if (data.success) {
+                                            var newRow = `<tr>
+                                            <td>${start_time}</td>
+                                            <td>${data.summary}</td>
+                                            <td>${data.translation}</td>
+                                            </tr>`;
+                                            $('#summary-table tbody').append(newRow);
+                                        } else {
+                                            console.error(data.message);
+                                        }
+                                    })
+                                    .fail(function () {
+                                        console.error('要約リクエストに失敗しました。');
+                                    });
+                            }
+                        }, 5000);
+                    }
+                });
+        });
+        $('#stop-recognition-button').on('click', function () {
+            $.post('/api/stop-recognition')
+                .done(function (data) {
+                    alert(data.message);
+                    if (data.success && intervalId !== null) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
