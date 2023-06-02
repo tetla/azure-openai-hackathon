@@ -22,4 +22,4 @@ for msg in messages:
         print("メッセージが追加されました。")
     else:
         print("メッセージ追加に失敗しました。")
-    time.sleep(10)
+    time.sleep(2)

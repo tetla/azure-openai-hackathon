@@ -33,7 +33,9 @@ def send_message():
         
         if is_topic_changed(app_data['current_topic_messages'], message):
             summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
+            next_action = get_next_task("\n".join([x['message'] for x in app_data['current_topic_messages']]))
             app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': 'bot', 'userIcon': userIcon, 'bot': True})
+            app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': 'bot', 'userIcon': userIcon, 'bot': True})
 
             app_data['current_topic_messages'] = []
 
@@ -117,6 +119,21 @@ def get_summary(text):
             "role": "system",
             "content": """You are an AI assistant that summarize text.
             Please summarize the input text.""",
+        },
+        {"role": "user", "content": f"{text}"},
+    ]
+    openai = oai.Openai()
+    summary = openai.chat_completion(message)
+    return summary
+
+def get_next_task(text):
+    message = [
+        {
+            "role": "system",
+            "content": """You are an AI assistant that extract the next task from conversations.
+            List below the tasks to be performed by the next from the above conversation and who is assigned to those tasks. Please generate the text in the following format in Japanese.
+            タスク: [what to do]
+            担当者: [who is in charge of the task]""",
         },
         {"role": "user", "content": f"{text}"},
     ]
