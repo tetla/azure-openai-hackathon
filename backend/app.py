@@ -25,34 +25,35 @@ def send_message():
     userName = request.form.get('userName')
     userIcon = request.form.get('userIcon') or 'Bandit'
     userIcon = "https://api.dicebear.com/6.x/personas/svg?seed=" + userIcon
+    ignore = request.form.get('ignore') or False
     bot = request.form.get('bot') or False
 
     if message:
         timestamp = datetime.now()
-        app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
+        app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot, "ignore": ignore})
 
-        if "ちくわ大明神" in message:
+        if "困ったなァ" in message:
             botUserIcon = "https://api.dicebear.com/6.x/thumbs/svg?seed=Snuggles"
-            app_data['messages'].append({'timestamp': timestamp, 'message': "会議にそぐわない発言を検知しました。", 'userName': '検閲くん', 'userIcon': botUserIcon, 'bot': True})
+            app_data['messages'].append({'timestamp': timestamp, 'message': f"会議にそぐわない発言を検知しました。要約対象から除外します。 > C: {message} {timestamp}", 'userName': '検閲くん', 'userIcon': botUserIcon, 'bot': True, "ignore": ignore})
             return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
         
         if is_topic_changed(app_data['current_topic_messages'], message):
             summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
             # next_action = get_next_task("\n".join([x['message'] for x in app_data['current_topic_messages']]))
             botUserIcon = "https://api.dicebear.com/6.x/thumbs/svg?seed=Boo"
-            app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': '要約くん', 'userIcon': botUserIcon, 'bot': True})
+            app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': '要約くん', 'userIcon': botUserIcon, 'bot': True, "ignore": ignore})
             # app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': 'タスクくん', 'userIcon': botUserIcon, 'bot': True})
 
             app_data['current_topic_messages'] = []
 
-        app_data['current_topic_messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
+        app_data['current_topic_messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot, "ignore": ignore})
         return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
     else:
         return jsonify({'success': False, 'message': 'メッセージが空です。'})
 
 @app.route('/api/finish-meeting', methods=['POST'])
 def finish_meething():
-    all_message = "\n".join([x['message'] for x in app_data['messages'] if x['bot'] == False])
+    all_message = "\n".join([x['message'] for x in app_data['messages'] if x['bot'] == False and x['ignore'] == False])
     summary = get_summary(all_message)
     next_action = get_next_task(all_message)
     botUserIcon1 = "https://api.dicebear.com/6.x/thumbs/svg?seed=Coco"

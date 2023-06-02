@@ -12,7 +12,10 @@ for conv in conversations:
         pass
     else:
         name, icon, msg = conv.split(':')
-        messages.append({"message": msg, "userName": name, "userIcon": icon})
+        if name == "C":
+            messages.append({"message": msg, "userName": name, "userIcon": icon, "ignore": True})
+        else:
+            messages.append({"message": msg, "userName": name, "userIcon": icon})
 
 for msg in messages:
     print(msg)
