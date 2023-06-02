@@ -13,22 +13,51 @@
             width: 100%;
         }
 
+        .container-header {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
         .left-side,
         .right-side {
             width: 50%;
             height: 100%;
             overflow-y: scroll;
             padding: 20px;
+            position: relative;
+            /* 新しく追加 */
         }
 
         .message {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            /* flex-start に変更 */
             margin-bottom: 15px;
         }
 
+        .user-icon-name {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 10px;
+            /* アイコンと発言内容の間にスペースを追加 */
+        }
+
+        .message-user-name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .message-text-timestamp {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
         .message-text {
-            margin-left: 10px;
+            display: block;
+            /* flex を block に変更 */
+            width: 100%;
         }
 
         .ai-message {
@@ -45,9 +74,11 @@
 
 <body>
     <div class="left-side">
+        <h2 class="container-header">発言内容</h2>
         <!-- 会議の発言箇所。JavaScriptでDynamically更新 -->
     </div>
     <div class="right-side">
+        <h2 class="container-header">Botの発言内容</h2>
         <!-- AIの発言箇所。JavaScriptでDynamically更新 -->
     </div>
 
@@ -79,17 +110,22 @@
             const rightMessageContainer = document.querySelector('.right-side');
 
             // 左側および右側のメッセージコンテナをクリア
-            leftMessageContainer.innerHTML = '';
-            rightMessageContainer.innerHTML = '';
+            leftMessageContainer.innerHTML = '<h2 class="container-header">発言内容</h2>';
+            rightMessageContainer.innerHTML = '<h2 class="container-header">会議の進行</h2>';
 
             messages.forEach(message => {
                 const messageElement = `<div class="message">
-                                  <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
-                                  <div class="message-text">
-                                    <p>${message.message}</p>
-                                    <small>${message.timestamp}</small>
-                                  </div>
-                                </div>`;
+    <div class="user-icon-name">
+        <img src="${message.userIcon}" alt="${message.userName}" width="40" height="40">
+        <span class="message-user-name">${message.userName}</span>
+    </div>
+    <div class="message-text-timestamp">
+        <div class="message-text">
+            <span>${message.message}</span>
+        </div>
+        <small>${message.timestamp}</small>
+    </div>
+</div>`;
 
                 // メッセージがボットからのものであれば右側のコンテナに、そうでなければ左側のコンテナに追加
                 if (message.bot) {
