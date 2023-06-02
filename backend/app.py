@@ -23,7 +23,6 @@ def home():
 def send_message():
     message = request.form.get('message')
     userName = request.form.get('userName')
-    # requestにuserIconが含まれていればその値を設定し、なければhttps://api.dicebear.com/6.x/thumbs/svg?seed=Muffinを設定する
     userIcon = request.form.get('userIcon') or 'Bandit'
     userIcon = "https://api.dicebear.com/6.x/personas/svg?seed=" + userIcon
     bot = request.form.get('bot') or False
@@ -31,6 +30,11 @@ def send_message():
     if message:
         timestamp = datetime.now()
         app_data['messages'].append({'timestamp': timestamp, 'message': message, 'userName': userName, 'userIcon': userIcon, 'bot': bot})
+
+        if "ちくわ大明神" in message:
+            botUserIcon = "https://api.dicebear.com/6.x/thumbs/svg?seed=Snuggles"
+            app_data['messages'].append({'timestamp': timestamp, 'message': "会議にそぐわない発言を検知しました。", 'userName': '検閲くん', 'userIcon': botUserIcon, 'bot': True})
+            return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
         
         if is_topic_changed(app_data['current_topic_messages'], message):
             summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
@@ -50,7 +54,21 @@ def send_message():
         return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
     else:
         return jsonify({'success': False, 'message': 'メッセージが空です。'})
-    
+
+@app.route('/api/finish-meeting', methods=['POST'])
+def finish_meething():
+    all_message = "\n".join([x['message'] for x in app_data['messages'] if x['bot'] == False])
+    summary = get_summary(all_message)
+    next_action = get_next_task(all_message)
+    botUserIcon1 = "https://api.dicebear.com/6.x/thumbs/svg?seed=Coco"
+    botUserIcon2 = "https://api.dicebear.com/6.x/thumbs/svg?seed=Cali"
+    timestamp = datetime.now()
+    app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': '総括くん', 'userIcon': botUserIcon1, 'bot': True})
+    app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': '宿題くん', 'userIcon': botUserIcon2, 'bot': True})
+
+    return jsonify({'success': True, 'message': 'メッセージが追加されました。'})
+
+
 @app.route('/api/summarize', methods=['POST'])
 def summarize():
     text = request.form.get('text')
