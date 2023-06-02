@@ -40,8 +40,13 @@ def send_message():
         if is_topic_changed(app_data['current_topic_messages'], message):
             summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
             # next_action = get_next_task("\n".join([x['message'] for x in app_data['current_topic_messages']]))
+            checked_content = is_safe_content("\n".join([x['message'] for x in app_data['current_topic_messages']]))
+            print(checked_content,checked_content[0],checked_content[1])
+            print(type(checked_content),type(checked_content[0]),type(checked_content[1]))
             botUserIcon = "https://api.dicebear.com/6.x/thumbs/svg?seed=Boo"
             app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': '要約くん', 'userIcon': botUserIcon, 'bot': True, "ignore": ignore})
+            if checked_content.split(",")[0] == "[False":
+                app_data['messages'].append({'timestamp': timestamp, 'message': checked_content.split(",")[1].strip("]"), 'userName': '検閲くん', 'userIcon': botUserIcon, 'bot': True})
             # app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': 'タスクくん', 'userIcon': botUserIcon, 'bot': True})
 
             app_data['current_topic_messages'] = []
@@ -139,7 +144,9 @@ def get_summary(text):
         {
             "role": "system",
             "content": """You are an AI assistant that summarize text.
-            Please summarize the input text.""",
+            Please summarize the main topic in input text.
+            Please generate the text in Japanese.
+            """,
         },
         {"role": "user", "content": f"{text}"},
     ]
@@ -160,6 +167,24 @@ def get_next_task(text):
     ]
     openai = oai.Openai()
     summary = openai.chat_completion(message)
+    return summary
+
+def is_safe_content(text):
+    message = [
+        {
+            "role": "system",
+            "content": """You are an AI assistant that checks the conversation content.
+            You check the content of the conversation for dangerous content or content that offends the dignity of others.
+            If there are problems with the content of the conversation, you will recommend how the agenda should be modified.
+            If there are no problems with the content of the conversation, you will return the list of Python like [True, None].
+            If there are problems with the content of the conversation, you will return the list of Python like [False, "what should be modified in the conversations."].
+            Please generate the text in Japanese.
+            """,
+        },
+        {"role": "user", "content": f"{text}"},
+    ]
+    openai = oai.Openai()
+    summary = openai.chat_completion(message,temperature=1.0)
     return summary
 
 def translate_text(text):
