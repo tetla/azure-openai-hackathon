@@ -24,7 +24,8 @@ def send_message():
     message = request.form.get('message')
     userName = request.form.get('userName')
     # requestにuserIconが含まれていればその値を設定し、なければhttps://api.dicebear.com/6.x/thumbs/svg?seed=Muffinを設定する
-    userIcon = request.form.get('userIcon') or 'https://api.dicebear.com/6.x/thumbs/svg?seed=Muffin'
+    userIcon = request.form.get('userIcon') or 'Bandit'
+    userIcon = "https://api.dicebear.com/6.x/personas/svg?seed=" + userIcon
     bot = request.form.get('bot') or False
 
     if message:
@@ -33,9 +34,10 @@ def send_message():
         
         if is_topic_changed(app_data['current_topic_messages'], message):
             summary = get_summary("\n".join([x['message'] for x in app_data['current_topic_messages']]))
-            next_action = get_next_task("\n".join([x['message'] for x in app_data['current_topic_messages']]))
-            app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': 'bot', 'userIcon': userIcon, 'bot': True})
-            app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': 'bot', 'userIcon': userIcon, 'bot': True})
+            # next_action = get_next_task("\n".join([x['message'] for x in app_data['current_topic_messages']]))
+            botUserIcon = "https://api.dicebear.com/6.x/thumbs/svg?seed=Boo"
+            app_data['messages'].append({'timestamp': timestamp, 'message': summary, 'userName': '要約くん', 'userIcon': botUserIcon, 'bot': True})
+            # app_data['messages'].append({'timestamp': timestamp, 'message': next_action, 'userName': 'タスクくん', 'userIcon': botUserIcon, 'bot': True})
 
             app_data['current_topic_messages'] = []
 

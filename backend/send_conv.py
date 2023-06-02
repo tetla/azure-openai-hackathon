@@ -11,8 +11,8 @@ for conv in conversations:
     if conv == '\n':
         pass
     else:
-        name, msg = conv.split(':')
-        messages.append({"message": msg, "userName": name})
+        name, icon, msg = conv.split(':')
+        messages.append({"message": msg, "userName": name, "userIcon": icon})
 
 for msg in messages:
     print(msg)
